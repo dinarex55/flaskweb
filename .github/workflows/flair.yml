@@ -1,0 +1,39 @@
+name: Flair Docker Workflow
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Run every hour
+  workflow_dispatch:
+
+jobs:
+  run-flair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350  # 5 hours 50 minutes
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Pull Flair Docker image
+        run: |
+          docker pull dinarex55/flair
+          echo "Docker image pulled successfully"
+      
+      - name: Run Flair Docker container with NET_ADMIN and /dev/net/tun
+        run: |
+          docker run \
+            --rm \
+            --cap-add=NET_ADMIN \
+            --device=/dev/net/tun \
+            --name flair-container \
+            dinarex55/flair
+      
+      - name: Trigger workflow again
+        if: success() || failure()
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/flair.yml/dispatches \
+            -d '{"ref":"main"}'
+        continue-on-error: true
