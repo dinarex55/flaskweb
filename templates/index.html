@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Web Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .status {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .response {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .response pre {
+            font-size: 12px;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .loading {
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .error {
+            color: #e74c3c;
+            border-left-color: #e74c3c;
+            background: #fdeaea;
+        }
+
+        .success {
+            color: #27ae60;
+            border-left-color: #27ae60;
+            background: #eafdf2;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: #27ae60;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .section h2 {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Flask Web Application</h1>
+        <div class="status">
+            <span class="status-badge" id="statusBadge">Checking...</span>
+        </div>
+
+        <!-- Hello API Section -->
+        <div class="section">
+            <h2>👋 Say Hello</h2>
+            <div class="form-group">
+                <label for="helloName">Name:</label>
+                <input type="text" id="helloName" placeholder="Enter your name">
+            </div>
+            <button onclick="callHelloAPI()">Send Greeting</button>
+            <div class="response" id="helloResponse" style="display:none;"></div>
+        </div>
+
+        <!-- Echo API Section -->
+        <div class="section">
+            <h2>🔊 Echo Message</h2>
+            <div class="form-group">
+                <label for="echoData">Data (JSON):</label>
+                <textarea id="echoData" placeholder='{"message": "Hello, API!"}'></textarea>
+            </div>
+            <button onclick="callEchoAPI()">Send Echo</button>
+            <div class="response" id="echoResponse" style="display:none;"></div>
+        </div>
+
+        <!-- Status API Section -->
+        <div class="section">
+            <h2>📊 Check Status</h2>
+            <button onclick="callStatusAPI()">Get Status</button>
+            <div class="response" id="statusResponse" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Check initial status
+        window.addEventListener('load', () => {
+            callStatusAPI();
+        });
+
+        async function callHelloAPI() {
+            const name = document.getElementById('helloName').value || 'World';
+            const responseDiv = document.getElementById('helloResponse');
+            
+            try {
+                responseDiv.textContent = 'Loading...';
+                responseDiv.className = 'response loading';
+                responseDiv.style.display = 'block';
+
+                const response = await fetch('/api/hello', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name: name })
+                });
+
+                const data = await response.json();
+                responseDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                responseDiv.className = 'response success';
+            } catch (error) {
+                responseDiv.innerHTML = '<pre>Error: ' + error.message + '</pre>';
+                responseDiv.className = 'response error';
+            }
+        }
+
+        async function callEchoAPI() {
+            const dataInput = document.getElementById('echoData').value;
+            const responseDiv = document.getElementById('echoResponse');
+            
+            try {
+                responseDiv.textContent = 'Loading...';
+                responseDiv.className = 'response loading';
+                responseDiv.style.display = 'block';
+
+                const data = JSON.parse(dataInput || '{}');
+                const response = await fetch('/api/echo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                responseDiv.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                responseDiv.className = 'response success';
+            } catch (error) {
+                responseDiv.innerHTML = '<pre>Error: ' + error.message + '</pre>';
+                responseDiv.className = 'response error';
+            }
+        }
+
+        async function callStatusAPI() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                // Update status badge
+                const badge = document.getElementById('statusBadge');
+                badge.textContent = data.status.toUpperCase();
+                badge.className = 'status-badge';
+                
+                // Show response
+                const responseDiv = document.getElementById('statusResponse');
+                responseDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                responseDiv.className = 'response success';
+                responseDiv.style.display = 'block';
+            } catch (error) {
+                const badge = document.getElementById('statusBadge');
+                badge.textContent = 'ERROR';
+                badge.style.background = '#e74c3c';
+                
+                const responseDiv = document.getElementById('statusResponse');
+                responseDiv.innerHTML = '<pre>Error: ' + error.message + '</pre>';
+                responseDiv.className = 'response error';
+                responseDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
